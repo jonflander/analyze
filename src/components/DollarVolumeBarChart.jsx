@@ -34,8 +34,34 @@ function groupByMonth(data) {
 }
 
 export default function DollarVolumeBarChart({ data, periods }) {
-  const m1 = groupByMonth(data.period1 || []);
-  const m2 = groupByMonth(data.period2 || []);
+  // Format date for display
+  const formatDateRange = (start, end) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  };
+  
+  // Create labels with date ranges
+  const period1Label = `${periods.period1.label} (${formatDateRange(periods.period1.start, periods.period1.end)})`;
+  const period2Label = `${periods.period2.label} (${formatDateRange(periods.period2.start, periods.period2.end)})`;
+  
+  // Filter data by date range
+  const filteredData1 = data.period1 ? data.period1.filter(d => {
+    const date = new Date(d.date);
+    const startDate = new Date(periods.period1.start);
+    const endDate = new Date(periods.period1.end);
+    return date >= startDate && date <= endDate;
+  }) : [];
+  
+  const filteredData2 = data.period2 ? data.period2.filter(d => {
+    const date = new Date(d.date);
+    const startDate = new Date(periods.period2.start);
+    const endDate = new Date(periods.period2.end);
+    return date >= startDate && date <= endDate;
+  }) : [];
+  
+  const m1 = groupByMonth(filteredData1);
+  const m2 = groupByMonth(filteredData2);
   
   // Get all unique month keys from both datasets
   const monthKeys = Array.from(new Set([...Object.keys(m1), ...Object.keys(m2)]));
@@ -69,14 +95,14 @@ export default function DollarVolumeBarChart({ data, periods }) {
       uniqueMonths[displayMonth] = {
         month: displayMonth, // Use just month name for display
         sortOrder, // Store the month's numeric order for sorting
-        [periods.period1.label]: 0,
-        [periods.period2.label]: 0,
+        [period1Label]: 0,
+        [period2Label]: 0,
       };
     }
     
     // Add the values from this month key to the corresponding unique month
-    uniqueMonths[displayMonth][periods.period1.label] += m1[monthKey]?.value || 0;
-    uniqueMonths[displayMonth][periods.period2.label] += m2[monthKey]?.value || 0;
+    uniqueMonths[displayMonth][period1Label] += m1[monthKey]?.value || 0;
+    uniqueMonths[displayMonth][period2Label] += m2[monthKey]?.value || 0;
   });
   
   // Convert the unique months map to an array for the chart
@@ -108,9 +134,9 @@ export default function DollarVolumeBarChart({ data, periods }) {
             labelFormatter={label => `Month: ${label}`}
             cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <Legend />
-          <Bar dataKey={periods.period1.label} fill={blackColor} />
-          <Bar dataKey={periods.period2.label} fill={tealColor} />
+          <Legend wrapperStyle={{ fontSize: '11px' }} />
+          <Bar dataKey={period1Label} fill={blackColor} />
+          <Bar dataKey={period2Label} fill={tealColor} />
         </BarChart>
       </ResponsiveContainer>
     </div>

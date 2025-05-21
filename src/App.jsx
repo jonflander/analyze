@@ -8,8 +8,8 @@ import { fetchHistorical } from "./utils/api.js";
 import { FiRefreshCw, FiBarChart2, FiDollarSign, FiTrendingUp } from "react-icons/fi";
 
 const defaultPeriods = {
-  period1: { label: "Period 1", start: "2023-04-01", end: "2023-12-31" },
-  period2: { label: "Period 2", start: "2024-04-01", end: "2024-12-31" }
+  period1: { label: "Period 1", start: "2023-01-01", end: "2023-05-31" },
+  period2: { label: "Period 2", start: "2024-01-01", end: "2024-05-31" }
 };
 
 function App() {
@@ -31,23 +31,52 @@ function App() {
   const [error, setError] = useState(null);
   const [initialized, setInitialized] = useState(false);
   
-  // Ensure we have basic mock data if everything else fails - different for each period
+  // Ensure we have basic mock data if everything else fails - significantly different for each period
   const fallbackData1 = [
-    { date: '2023-04-01', volume: 10000, close: 25 },
-    { date: '2023-05-01', volume: 12000, close: 26 },
-    { date: '2023-06-01', volume: 15000, close: 28 },
-    { date: '2023-07-01', volume: 14000, close: 27 },
-    { date: '2023-08-01', volume: 13000, close: 26.5 },
-    { date: '2023-09-01', volume: 16000, close: 29 },
+    { date: '2023-01-05', volume: 45000, close: 25.50 },
+    { date: '2023-01-12', volume: 62000, close: 26.75 },
+    { date: '2023-01-19', volume: 58000, close: 27.25 },
+    { date: '2023-01-26', volume: 71000, close: 28.00 },
+    { date: '2023-02-02', volume: 83000, close: 29.50 },
+    { date: '2023-02-09', volume: 76000, close: 30.25 },
+    { date: '2023-02-16', volume: 92000, close: 31.00 },
+    { date: '2023-02-23', volume: 88000, close: 30.50 },
+    { date: '2023-03-02', volume: 105000, close: 32.75 },
+    { date: '2023-03-09', volume: 98000, close: 33.25 },
+    { date: '2023-03-16', volume: 112000, close: 34.00 },
+    { date: '2023-03-23', volume: 125000, close: 35.50 },
+    { date: '2023-03-30', volume: 118000, close: 34.75 },
+    { date: '2023-04-06', volume: 132000, close: 36.25 },
+    { date: '2023-04-13', volume: 145000, close: 37.50 },
+    { date: '2023-04-20', volume: 138000, close: 36.75 },
+    { date: '2023-04-27', volume: 152000, close: 38.25 },
+    { date: '2023-05-04', volume: 165000, close: 39.00 },
+    { date: '2023-05-11', volume: 158000, close: 38.50 },
+    { date: '2023-05-18', volume: 172000, close: 40.25 },
+    { date: '2023-05-25', volume: 185000, close: 41.00 },
   ];
   
   const fallbackData2 = [
-    { date: '2024-04-01', volume: 18000, close: 30 },
-    { date: '2024-05-01', volume: 22000, close: 32 },
-    { date: '2024-06-01', volume: 25000, close: 34 },
-    { date: '2024-07-01', volume: 24000, close: 33 },
-    { date: '2024-08-01', volume: 26000, close: 35 },
-    { date: '2024-09-01', volume: 28000, close: 36 },
+    { date: '2024-01-04', volume: 95000, close: 42.50 },
+    { date: '2024-01-11', volume: 108000, close: 43.75 },
+    { date: '2024-01-18', volume: 122000, close: 45.00 },
+    { date: '2024-01-25', volume: 135000, close: 46.25 },
+    { date: '2024-02-01', volume: 148000, close: 47.50 },
+    { date: '2024-02-08', volume: 162000, close: 48.75 },
+    { date: '2024-02-15', volume: 175000, close: 50.00 },
+    { date: '2024-02-22', volume: 189000, close: 51.25 },
+    { date: '2024-02-29', volume: 202000, close: 52.50 },
+    { date: '2024-03-07', volume: 215000, close: 53.75 },
+    { date: '2024-03-14', volume: 229000, close: 55.00 },
+    { date: '2024-03-21', volume: 242000, close: 56.25 },
+    { date: '2024-03-28', volume: 255000, close: 57.50 },
+    { date: '2024-04-04', volume: 269000, close: 58.75 },
+    { date: '2024-04-11', volume: 282000, close: 60.00 },
+    { date: '2024-04-18', volume: 295000, close: 61.25 },
+    { date: '2024-04-25', volume: 309000, close: 62.50 },
+    { date: '2024-05-02', volume: 322000, close: 63.75 },
+    { date: '2024-05-09', volume: 335000, close: 65.00 },
+    { date: '2024-05-16', volume: 349000, close: 66.25 },
   ];
 
   // Function to update URL with current symbol
