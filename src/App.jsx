@@ -8,23 +8,72 @@ import { fetchHistorical } from "./utils/api.js";
 import { FiRefreshCw, FiBarChart2, FiDollarSign, FiTrendingUp } from "react-icons/fi";
 
 const defaultPeriods = {
-  period1: { label: "2023", start: "2023-04-01", end: "2023-12-31" },
-  period2: { label: "2024", start: "2024-04-01", end: "2024-12-31" }
+  period1: { label: "Period 1", start: "2023-04-01", end: "2023-12-31" },
+  period2: { label: "Period 2", start: "2024-04-01", end: "2024-12-31" }
 };
 
 function App() {
-  const [symbol, setSymbol] = useState("ETG.TO");
+  // Get stock symbol from URL parameters if available
+  const getInitialSymbol = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const symbolParam = params.get('symbol');
+      return symbolParam || "ETG.TO";
+    }
+    return "ETG.TO";
+  };
+
+  // Basic state setup
+  const [symbol, setSymbol] = useState(getInitialSymbol());
   const [periods, setPeriods] = useState(defaultPeriods);
   const [data, setData] = useState({ period1: [], period2: [] });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState(null);
   const [initialized, setInitialized] = useState(false);
+  
+  // Ensure we have basic mock data if everything else fails - different for each period
+  const fallbackData1 = [
+    { date: '2023-04-01', volume: 10000, close: 25 },
+    { date: '2023-05-01', volume: 12000, close: 26 },
+    { date: '2023-06-01', volume: 15000, close: 28 },
+    { date: '2023-07-01', volume: 14000, close: 27 },
+    { date: '2023-08-01', volume: 13000, close: 26.5 },
+    { date: '2023-09-01', volume: 16000, close: 29 },
+  ];
+  
+  const fallbackData2 = [
+    { date: '2024-04-01', volume: 18000, close: 30 },
+    { date: '2024-05-01', volume: 22000, close: 32 },
+    { date: '2024-06-01', volume: 25000, close: 34 },
+    { date: '2024-07-01', volume: 24000, close: 33 },
+    { date: '2024-08-01', volume: 26000, close: 35 },
+    { date: '2024-09-01', volume: 28000, close: 36 },
+  ];
+
+  // Function to update URL with current symbol
+  const updateUrlWithSymbol = (newSymbol) => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('symbol', newSymbol);
+      window.history.pushState({}, '', url);
+    }
+  };
+
+  // Custom symbol setter that also updates the URL
+  const handleSymbolChange = (newSymbol) => {
+    setSymbol(newSymbol);
+    updateUrlWithSymbol(newSymbol);
+  };
 
   // Only fetch data when component mounts or when dependencies change
   useEffect(() => { 
     fetchData();
     // Mark as initialized after first render
-    if (!initialized) setInitialized(true);
+    if (!initialized) {
+      setInitialized(true);
+      // Update URL on initial load if needed
+      updateUrlWithSymbol(symbol);
+    }
   }, [symbol, periods]);
 
   async function fetchData() {
@@ -32,39 +81,46 @@ function App() {
     setError(null);
     
     try {
-      // Use mock data if API fails (for development)
-      const mockData = [
-        { date: '2023-04-01', volume: 10000, close: 25 },
-        { date: '2023-05-01', volume: 12000, close: 26 },
-        { date: '2023-06-01', volume: 15000, close: 28 },
-      ];
-      
       // Try to fetch real data, fall back to mock data if API fails
       try {
+        console.log('Attempting to fetch data for', symbol);
         const [d1, d2] = await Promise.all([
           fetchHistorical(symbol, periods.period1.start, periods.period1.end),
           fetchHistorical(symbol, periods.period2.start, periods.period2.end)
         ]);
-        setData({ period1: d1 || [], period2: d2 || [] });
+        
+        if (d1 && d1.length > 0 && d2 && d2.length > 0) {
+          console.log('Successfully fetched data:', { period1: d1.length, period2: d2.length });
+          setData({ period1: d1, period2: d2 });
+        } else {
+          console.warn('API returned empty data, using fallback');
+          setData({ period1: fallbackData1, period2: fallbackData2 });
+          setError('API returned empty data. Using sample data instead.');
+        }
       } catch (apiError) {
-        console.warn("API error, using mock data:", apiError);
-        setData({ period1: mockData, period2: mockData });
+        console.warn("API error, using fallback data:", apiError);
+        setData({ period1: fallbackData1, period2: fallbackData2 });
         setError("Could not fetch live data. Using sample data instead.");
       }
     } catch (error) {
-      console.error("Error in data processing:", error);
+      console.error("Critical error in data processing:", error);
       setError("An error occurred while processing data.");
-      // Ensure we have at least empty arrays to prevent rendering errors
-      setData({ period1: [], period2: [] });
+      // Always ensure we have data to display
+      setData({ period1: fallbackData1, period2: fallbackData2 });
     } finally {
+      // Mark as initialized and stop loading
+      setInitialized(true);
       setLoading(false);
     }
   }
 
+  // Add console log for debugging
+  console.log('App rendering with data:', { symbol, dataLength: { period1: data.period1.length, period2: data.period2.length } });
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-teal-600 to-teal-700 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
@@ -72,10 +128,10 @@ function App() {
                 <FiBarChart2 className="mr-3" />
                 Stock Volume Analyzer
               </h1>
-              <p className="text-blue-100 mt-2">Compare trading volumes and dollar volumes across time periods</p>
+              <p className="text-teal-100 mt-2">Compare trading volumes and dollar volumes across time periods</p>
             </div>
             <div className="hidden md:block">
-              <div className="flex items-center space-x-2 text-blue-100">
+              <div className="flex items-center space-x-2 text-teal-100">
                 <FiTrendingUp className="text-2xl" />
                 <span>Real-time Market Data</span>
               </div>
@@ -91,7 +147,7 @@ function App() {
           <div className="flex flex-col md:flex-row md:items-end gap-4 flex-wrap">
             <div className="flex-1 min-w-[200px]">
               <label className="block text-sm font-medium text-gray-700 mb-1">Stock Symbol</label>
-              <SymbolSearch value={symbol} onChange={setSymbol} />
+              <SymbolSearch value={symbol} onChange={handleSymbolChange} />
             </div>
             <div className="flex-1">
               <DateRangePicker periods={periods} onChange={setPeriods} />
@@ -99,7 +155,7 @@ function App() {
             <button
               onClick={fetchData}
               disabled={loading}
-              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
               <FiRefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {loading ? 'Loading...' : 'Refresh Data'}

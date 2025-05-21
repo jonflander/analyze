@@ -1,23 +1,28 @@
 import React from "react";
+
 export default function DateRangePicker({ periods, onChange }) {
   return (
-    <div>
-      <label style={{ fontWeight: 600 }}>Compare Periods</label>
+    <div className="w-full">
+      <label className="block text-sm font-medium text-gray-700 mb-2">Compare Periods</label>
+      
       {["period1", "period2"].map(key => (
-        <div key={key} style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 2 }}>
-          <span>{periods[key].label}</span>
+        <div key={key} className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="min-w-[80px] font-medium">{periods[key].label}</span>
+          
           <input
             type="date"
             value={periods[key].start}
             onChange={e => onChange({ ...periods, [key]: { ...periods[key], start: e.target.value } })}
-            style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 6px" }}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500"
           />
-          <span>to</span>
+          
+          <span className="text-gray-500">to</span>
+          
           <input
             type="date"
             value={periods[key].end}
             onChange={e => onChange({ ...periods, [key]: { ...periods[key], end: e.target.value } })}
-            style={{ border: "1px solid #ccc", borderRadius: 4, padding: "2px 6px" }}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
       ))}

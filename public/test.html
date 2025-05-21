@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Analyzer Test Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(to right, #2563eb, #4f46e5);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Stock Volume Analyzer Test Page</h1>
+    <p>This is a simple test page to verify browser preview functionality</p>
+  </header>
+  
+  <div class="card">
+    <h2>Browser Preview Test</h2>
+    <p>If you can see this page, the browser preview is working correctly.</p>
+    <p>The main application might have issues with React rendering or API connectivity.</p>
+    <button id="testBtn">Click to Test Interactivity</button>
+  </div>
+
+  <div class="card" id="result">
+    <h2>Test Results</h2>
+    <p>Click the button above to see if JavaScript is working.</p>
+  </div>
+
+  <script>
+    // Simple script to test JavaScript functionality
+    document.getElementById('testBtn').addEventListener('click', function() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <h2>JavaScript is Working!</h2>
+        <p>Current time: ${new Date().toLocaleTimeString()}</p>
+        <p>Browser: ${navigator.userAgent}</p>
+      `;
+    });
+
+    // Log to console to verify JavaScript execution
+    console.log('Test page loaded successfully at', new Date().toLocaleTimeString());
+  </script>
+</body>
+</html>
