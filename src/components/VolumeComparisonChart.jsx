@@ -7,24 +7,54 @@ function toMonthDay(dateStr) {
   return format(d, "MMM-dd");
 }
 
-function prepareYoYData(data1 = [], data2 = [], label1 = "2023", label2 = "2024") {
+function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "Period 2") {
+  // Create a continuous series of dates to avoid gaps in the chart
+  const allDates = new Set();
+  
+  // Extract all dates from both datasets
+  data1.forEach(d => allDates.add(d.date));
+  data2.forEach(d => allDates.add(d.date));
+  
+  // Convert to array and sort chronologically
+  const sortedDates = Array.from(allDates).sort();
+  
+  // Create a map of date to display format
+  const dateDisplayMap = {};
+  sortedDates.forEach(date => {
+    dateDisplayMap[date] = toMonthDay(date);
+  });
+  
+  // Create a map for the chart data
   const map = {};
-
+  
+  // Create entries for all dates to ensure continuity
+  sortedDates.forEach(date => {
+    const displayDate = dateDisplayMap[date];
+    if (!map[displayDate]) {
+      map[displayDate] = { 
+        x: displayDate,
+        fullDate: date, // Keep the original date for sorting
+        [label1]: 0,
+        [label2]: 0
+      };
+    }
+  });
+  
+  // Fill in actual data for period 1
   data1.forEach(d => {
-    const key = toMonthDay(d.date);
-    if (!map[key]) map[key] = { x: key };
-    map[key][label1] = d.volume;
+    const key = dateDisplayMap[d.date];
+    map[key][label1] = d.volume || 0;
   });
-
+  
+  // Fill in actual data for period 2
   data2.forEach(d => {
-    const key = toMonthDay(d.date);
-    if (!map[key]) map[key] = { x: key };
-    map[key][label2] = d.volume;
+    const key = dateDisplayMap[d.date];
+    map[key][label2] = d.volume || 0;
   });
-
-  // Sort by month-day using a base year (e.g., 2000) for accurate order
+  
+  // Sort by original date for accurate chronological order
   return Object.values(map).sort((a, b) => {
-    return new Date(`2000-${a.x}`) - new Date(`2000-${b.x}`);
+    return new Date(a.fullDate) - new Date(b.fullDate);
   });
 }
 
