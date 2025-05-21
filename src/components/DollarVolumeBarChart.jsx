@@ -34,9 +34,9 @@ function groupByMonth(data) {
 }
 
 export default function DollarVolumeBarChart({ data, periods }) {
-  // Use simple period labels matching SummaryStats
-  const period1Label = periods.period1.label;
-  const period2Label = periods.period2.label;
+  // Create period labels in the format 'Period x: yyyy-mm-dd to yyyy-mm-dd'
+  const period1Label = `Period 1: ${periods.period1.start} to ${periods.period1.end}`;
+  const period2Label = `Period 2: ${periods.period2.start} to ${periods.period2.end}`;
   
   // Filter data by date range
   const filteredData1 = data.period1 ? data.period1.filter(d => {
@@ -127,7 +127,16 @@ export default function DollarVolumeBarChart({ data, periods }) {
             labelFormatter={label => `Month: ${label}`}
             cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <Legend wrapperStyle={{ fontSize: '11px' }} />
+          <Legend 
+            verticalAlign="bottom"
+            height={50}
+            wrapperStyle={{ 
+              paddingBottom: '10px', 
+              fontSize: '11px',
+              lineHeight: '1.2em',
+              width: '100%'
+            }}
+          />
           <Bar dataKey={period1Label} fill={blackColor} />
           <Bar dataKey={period2Label} fill={tealColor} />
         </BarChart>

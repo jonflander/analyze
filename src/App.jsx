@@ -4,6 +4,7 @@ import DateRangePicker from "./components/DateRangePicker.jsx";
 import VolumeComparisonChart from "./components/VolumeComparisonChart.jsx";
 import DollarVolumeBarChart from "./components/DollarVolumeBarChart.jsx";
 import SummaryStats from "./components/SummaryStats.jsx";
+import MonthlyBreakdown from "./components/MonthlyBreakdown.jsx";
 import { fetchHistorical } from "./utils/api.js";
 import { FiRefreshCw, FiBarChart2, FiDollarSign, FiTrendingUp } from "react-icons/fi";
 
@@ -232,24 +233,11 @@ function App() {
             <>
               <SummaryStats data={data} periods={periods} />
               
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <FiBarChart2 className="mr-2 text-blue-600" />
-                  Volume Comparison
-                </h2>
-                <div className="h-96">
-                  <VolumeComparisonChart data={data} periods={periods} />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <FiDollarSign className="mr-2 text-green-600" />
-                  Dollar Volume Analysis
-                </h2>
-                <div className="h-96">
-                  <DollarVolumeBarChart data={data} periods={periods} />
-                </div>
+              {/* Charts */}
+              <div className="space-y-8 mt-8">
+                <VolumeComparisonChart data={data} periods={periods} />
+                <DollarVolumeBarChart data={data} periods={periods} />
+                <MonthlyBreakdown data={data} periods={periods} />
               </div>
             </>
           )}

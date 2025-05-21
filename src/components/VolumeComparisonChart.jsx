@@ -38,14 +38,19 @@ function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "P
       const month = date.getMonth();
       const day = date.getDate();
       
+      // Get month name for display
+      const monthName = date.toLocaleString('default', { month: 'short' });
+      
       // Create a normalized date for consistent x-axis positioning
       // Use a fixed year (2000) for both periods to align them on the x-axis
       const normalizedDate = new Date(2000, month, day);
       
       result.push({
         originalDate: d.date,
-        // Format as MM-DD for display
-        x: `${month + 1}-${day}`,
+        // Use month name for display
+        x: monthName,
+        // Include day for more detailed tooltip
+        fullDate: `${monthName} ${day}`,
         // Use the normalized date for sorting
         sortDate: normalizedDate,
         // Store the volume under the period label
@@ -98,9 +103,9 @@ export default function VolumeComparisonChart({ data, periods }) {
   const tealColor = "#20B2AA";
   const blackColor = "#000000";
   
-  // Create simple period labels matching SummaryStats
-  const label1 = `${periods.period1.label}`;
-  const label2 = `${periods.period2.label}`;
+  // Create period labels in the format 'Period x: yyyy-mm-dd to yyyy-mm-dd'
+  const label1 = `Period 1: ${periods.period1.start} to ${periods.period1.end}`;
+  const label2 = `Period 2: ${periods.period2.start} to ${periods.period2.end}`;
   
   // Prepare data for chart with date range filtering
   const chartData = prepareYoYData(
@@ -139,9 +144,14 @@ export default function VolumeComparisonChart({ data, periods }) {
             labelFormatter={label => `Date: ${label}`}
           />
           <Legend 
-            verticalAlign="top"
-            height={36}
-            wrapperStyle={{ paddingTop: '10px' }}
+            verticalAlign="bottom"
+            height={50}
+            wrapperStyle={{ 
+              paddingBottom: '10px', 
+              fontSize: '11px',
+              lineHeight: '1.2em',
+              width: '100%'
+            }}
           />
           <Line 
             name={label1} 
