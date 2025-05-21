@@ -27,56 +27,73 @@ function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "P
     return date >= startDate && date <= endDate;
   }) : filteredData2;
   
-  // Create a set of trading dates (dates with volume > 0)
-  const tradingDates = new Set();
+  // Create a map to align data by month and day (ignoring year)
+  const alignedData = {};
   
-  // Extract all trading dates from both datasets
-  filteredByDateData1.forEach(d => tradingDates.add(d.date));
-  filteredByDateData2.forEach(d => tradingDates.add(d.date));
-  
-  // Convert to array and sort chronologically
-  const sortedDates = Array.from(tradingDates).sort();
-  
-  // Create a map for the chart data
-  const map = {};
-  
-  // Create entries only for trading dates
-  sortedDates.forEach(date => {
-    const dateObj = new Date(date);
-    const monthName = dateObj.toLocaleString('default', { month: 'short' });
-    const day = dateObj.getDate();
+  // Process Period 1 data
+  filteredByDateData1.forEach(d => {
+    const date = new Date(d.date);
+    const month = date.getMonth();
+    const day = date.getDate();
     
-    // Format the display date to show month and day
-    const displayDate = `${monthName}-${day}`;
+    // Create a key that represents the month and day (ignoring year)
+    // This allows us to align the same day across different years
+    const monthDayKey = `${month+1}-${day}`;
     
-    if (!map[date]) { // Use the full date as key to avoid collisions
-      map[date] = { 
-        x: displayDate,
-        fullDate: date, // Keep the original date for sorting
+    if (!alignedData[monthDayKey]) {
+      alignedData[monthDayKey] = {
+        // Use the month name for display on x-axis
+        x: date.toLocaleString('default', { month: 'short' }),
+        // Store the month and day for sorting
+        month: month,
+        day: day,
+        // Initialize data for both periods
         [label1]: 0,
         [label2]: 0
       };
     }
+    
+    // Add the volume data for Period 1
+    alignedData[monthDayKey][label1] = d.volume || 0;
   });
   
-  // Fill in actual data for period 1
-  filteredByDateData1.forEach(d => {
-    if (map[d.date]) {
-      map[d.date][label1] = d.volume || 0;
-    }
-  });
-  
-  // Fill in actual data for period 2
+  // Process Period 2 data
   filteredByDateData2.forEach(d => {
-    if (map[d.date]) {
-      map[d.date][label2] = d.volume || 0;
+    const date = new Date(d.date);
+    const month = date.getMonth();
+    const day = date.getDate();
+    
+    // Use the same key format to align with Period 1
+    const monthDayKey = `${month+1}-${day}`;
+    
+    if (!alignedData[monthDayKey]) {
+      alignedData[monthDayKey] = {
+        // Use the month name for display on x-axis
+        x: date.toLocaleString('default', { month: 'short' }),
+        // Store the month and day for sorting
+        month: month,
+        day: day,
+        // Initialize data for both periods
+        [label1]: 0,
+        [label2]: 0
+      };
     }
+    
+    // Add the volume data for Period 2
+    alignedData[monthDayKey][label2] = d.volume || 0;
   });
   
-  // Sort by original date for accurate chronological order
-  return Object.values(map).sort((a, b) => {
-    return new Date(a.fullDate) - new Date(b.fullDate);
+  // Convert to array and sort by month and day
+  const result = Object.values(alignedData).sort((a, b) => {
+    // Sort by month first
+    if (a.month !== b.month) {
+      return a.month - b.month;
+    }
+    // Then by day
+    return a.day - b.day;
   });
+  
+  return result;
 }
 
 export default function VolumeComparisonChart({ data, periods }) {
@@ -107,38 +124,23 @@ export default function VolumeComparisonChart({ data, periods }) {
         <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 20 }}>
           <XAxis 
             dataKey="x" 
-            interval={Math.ceil(chartData.length / 30)} // Show more ticks for better month visibility
-            angle={-45} // Angle the labels to prevent overlap
-            textAnchor="end" // Align the rotated text
-            height={60} // Increase height to accommodate angled labels
-            tick={props => {
-              const { x, y, payload } = props;
-              // Extract month from the label (format is Month-Day)
-              const parts = payload.value.split('-');
-              const month = parts[0];
-              const day = parts[1];
+            interval="preserveStart" // Show month names at regular intervals
+            tickFormatter={(value, index) => {
+              // Get the current item and the previous item
+              const currentItem = chartData[index];
+              const prevItem = index > 0 ? chartData[index - 1] : null;
               
-              // Only show the month on the first day of each month or every 5 days
-              const isFirstOfMonth = day === '1' || day === '2' || day === '3';
-              const isEveryFifthDay = parseInt(day) % 5 === 0;
+              // If this is the first item or the month has changed from the previous item, show the month name
+              if (!prevItem || prevItem.month !== currentItem.month) {
+                return value; // Show the month name
+              }
               
-              return (
-                <g transform={`translate(${x},${y})`}>
-                  <text 
-                    x={0} 
-                    y={0} 
-                    dy={16} 
-                    textAnchor="end" 
-                    fill="#666" 
-                    transform="rotate(-45)"
-                    fontSize={11}
-                  >
-                    {isFirstOfMonth ? month : (isEveryFifthDay ? day : '')}
-                  </text>
-                </g>
-              );
+              // Otherwise, don't show anything to avoid crowding
+              return '';
             }}
-            tickMargin={10} // Add margin to prevent overlap
+            height={40} // Increase height to accommodate labels
+            tick={{ fontSize: 12 }} // Slightly larger font for month names
+            tickMargin={5} // Add margin to prevent overlap
           />
           <YAxis 
             tickFormatter={value => value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value.toLocaleString()} 
