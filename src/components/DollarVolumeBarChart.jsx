@@ -46,22 +46,41 @@ export default function DollarVolumeBarChart({ data, periods }) {
     'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
   };
   
-  // Create chart data with consistent month representation
-  const chartData = monthKeys.map(monthKey => {
+  // Create a map to deduplicate months by using year-month as key
+  const uniqueMonths = {};
+  
+  // Process all month keys and combine data for the same month
+  monthKeys.forEach(monthKey => {
+    // Extract year and month from the key (format: yyyy-MM)
+    const [year, month] = monthKey.split('-');
+    
     // Get display month from either dataset
     const displayMonth = m1[monthKey]?.displayMonth || m2[monthKey]?.displayMonth;
+    
+    // Skip if we can't determine the month
+    if (!displayMonth) return;
     
     // Get sort order from either dataset or infer from month name
     const sortOrder = m1[monthKey]?.sortOrder || m2[monthKey]?.sortOrder || monthOrder[displayMonth] || 0;
     
-    return {
-      month: displayMonth, // Use just month name for display
-      monthKey, // Keep the full key for reference
-      sortOrder, // Store the month's numeric order for sorting
-      [periods.period1.label]: m1[monthKey]?.value || 0,
-      [periods.period2.label]: m2[monthKey]?.value || 0,
-    };
+    // Create a unique identifier for this month (just the month name)
+    // This ensures we don't have duplicate months in the chart
+    if (!uniqueMonths[displayMonth]) {
+      uniqueMonths[displayMonth] = {
+        month: displayMonth, // Use just month name for display
+        sortOrder, // Store the month's numeric order for sorting
+        [periods.period1.label]: 0,
+        [periods.period2.label]: 0,
+      };
+    }
+    
+    // Add the values from this month key to the corresponding unique month
+    uniqueMonths[displayMonth][periods.period1.label] += m1[monthKey]?.value || 0;
+    uniqueMonths[displayMonth][periods.period2.label] += m2[monthKey]?.value || 0;
   });
+  
+  // Convert the unique months map to an array for the chart
+  const chartData = Object.values(uniqueMonths);
   
   // Sort by month order (not alphabetically or by year-month string)
   chartData.sort((a, b) => a.sortOrder - b.sortOrder);

@@ -8,15 +8,19 @@ function toMonthDay(dateStr) {
 }
 
 function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "Period 2") {
-  // Create a continuous series of dates to avoid gaps in the chart
-  const allDates = new Set();
+  // Filter out entries with zero volume (non-trading days)
+  const filteredData1 = data1.filter(d => d.volume > 0);
+  const filteredData2 = data2.filter(d => d.volume > 0);
   
-  // Extract all dates from both datasets
-  data1.forEach(d => allDates.add(d.date));
-  data2.forEach(d => allDates.add(d.date));
+  // Create a set of trading dates (dates with volume > 0)
+  const tradingDates = new Set();
+  
+  // Extract all trading dates from both datasets
+  filteredData1.forEach(d => tradingDates.add(d.date));
+  filteredData2.forEach(d => tradingDates.add(d.date));
   
   // Convert to array and sort chronologically
-  const sortedDates = Array.from(allDates).sort();
+  const sortedDates = Array.from(tradingDates).sort();
   
   // Create a map of date to display format
   const dateDisplayMap = {};
@@ -27,7 +31,7 @@ function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "P
   // Create a map for the chart data
   const map = {};
   
-  // Create entries for all dates to ensure continuity
+  // Create entries only for trading dates
   sortedDates.forEach(date => {
     const displayDate = dateDisplayMap[date];
     if (!map[displayDate]) {
@@ -41,15 +45,19 @@ function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "P
   });
   
   // Fill in actual data for period 1
-  data1.forEach(d => {
+  filteredData1.forEach(d => {
     const key = dateDisplayMap[d.date];
-    map[key][label1] = d.volume || 0;
+    if (key && map[key]) {
+      map[key][label1] = d.volume || 0;
+    }
   });
   
   // Fill in actual data for period 2
-  data2.forEach(d => {
+  filteredData2.forEach(d => {
     const key = dateDisplayMap[d.date];
-    map[key][label2] = d.volume || 0;
+    if (key && map[key]) {
+      map[key][label2] = d.volume || 0;
+    }
   });
   
   // Sort by original date for accurate chronological order
@@ -74,7 +82,14 @@ export default function VolumeComparisonChart({ data, periods }) {
       </h2>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={chartData}>
-          <XAxis dataKey="x" />
+          <XAxis 
+            dataKey="x" 
+            interval="preserveStartEnd" 
+            tickFormatter={(value) => {
+              // Simplify the date format to reduce label crowding
+              return value.split('-')[0]; // Just show the month
+            }}
+          />
           <YAxis tickFormatter={value => value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value.toLocaleString()} />
           <Tooltip 
             formatter={value => [value.toLocaleString(), "Volume"]} 
@@ -88,6 +103,7 @@ export default function VolumeComparisonChart({ data, periods }) {
             stroke={blackColor} 
             strokeWidth={2} 
             dot={false} 
+            connectNulls={true}
             activeDot={{ r: 6, strokeWidth: 0 }} 
           />
           <Line 
@@ -97,6 +113,7 @@ export default function VolumeComparisonChart({ data, periods }) {
             stroke={tealColor} 
             strokeWidth={2} 
             dot={false} 
+            connectNulls={true}
             activeDot={{ r: 6, strokeWidth: 0 }} 
           />
         </LineChart>
