@@ -27,79 +27,70 @@ function prepareYoYData(data1 = [], data2 = [], label1 = "Period 1", label2 = "P
     return date >= startDate && date <= endDate;
   }) : filteredData2;
   
-  // Create a set of unique dates for x-axis
-  const uniqueDates = new Set();
-  
-  // Extract all trading dates from both datasets
-  filteredByDateData1.forEach(d => uniqueDates.add(d.date));
-  filteredByDateData2.forEach(d => uniqueDates.add(d.date));
-  
-  // Convert to array and sort chronologically
-  const sortedDates = Array.from(uniqueDates).sort();
-  
-  // Create a map to deduplicate date display labels
-  const monthMap = {};
-  let currentMonth = '';
-  let monthCount = 0;
-  
-  // Create a map of date to display format with deduplication
-  const dateDisplayMap = {};
-  sortedDates.forEach(date => {
-    const dateObj = new Date(date);
-    const month = dateObj.toLocaleString('default', { month: 'short' });
-    const day = dateObj.getDate();
+  // Prepare data for each period separately
+  const prepareDataForPeriod = (data, label, year) => {
+    // Create a map for the chart data
+    const result = [];
     
-    // Create a unique display format that includes the month only once per month
-    if (month !== currentMonth) {
-      currentMonth = month;
-      monthCount = 1;
-      dateDisplayMap[date] = `${month}-${day}`;
-      monthMap[month] = true;
-    } else {
-      // For subsequent days in the same month, just show the day
-      monthCount++;
-      if (monthCount % 5 === 0) { // Show month every 5 days to avoid crowding
-        dateDisplayMap[date] = `${month}-${day}`;
-      } else {
-        dateDisplayMap[date] = `${day}`;
-      }
-    }
-  });
+    // Group by month and day for better display
+    data.forEach(d => {
+      const date = new Date(d.date);
+      const month = date.getMonth();
+      const day = date.getDate();
+      
+      // Create a normalized date for consistent x-axis positioning
+      // Use a fixed year (2000) for both periods to align them on the x-axis
+      const normalizedDate = new Date(2000, month, day);
+      
+      result.push({
+        originalDate: d.date,
+        // Format as MM-DD for display
+        x: `${month + 1}-${day}`,
+        // Use the normalized date for sorting
+        sortDate: normalizedDate,
+        // Store the volume under the period label
+        [label]: d.volume || 0,
+        // Store 0 for the other period
+        [label === label1 ? label2 : label1]: 0
+      });
+    });
+    
+    return result;
+  };
   
-  // Create a map for the chart data
-  const map = {};
+  // Process each period
+  const period1Data = prepareDataForPeriod(filteredByDateData1, label1);
+  const period2Data = prepareDataForPeriod(filteredByDateData2, label2);
   
-  // Create entries only for trading dates
-  sortedDates.forEach(date => {
-    const displayDate = dateDisplayMap[date];
-    if (!map[date]) { // Use the full date as key to avoid collisions
-      map[date] = { 
-        x: displayDate,
-        fullDate: date, // Keep the original date for sorting
+  // Combine both datasets
+  const combinedData = [...period1Data, ...period2Data];
+  
+  // Create a map to merge data points with the same month-day
+  const mergedDataMap = {};
+  
+  combinedData.forEach(item => {
+    const key = item.x; // MM-DD format
+    
+    if (!mergedDataMap[key]) {
+      mergedDataMap[key] = {
+        x: key,
+        sortDate: item.sortDate,
         [label1]: 0,
         [label2]: 0
       };
     }
+    
+    // Add the volume data from this item
+    if (item[label1] > 0) mergedDataMap[key][label1] = item[label1];
+    if (item[label2] > 0) mergedDataMap[key][label2] = item[label2];
   });
   
-  // Fill in actual data for period 1
-  filteredByDateData1.forEach(d => {
-    if (map[d.date]) {
-      map[d.date][label1] = d.volume || 0;
-    }
+  // Convert the map to an array and sort by date
+  const result = Object.values(mergedDataMap).sort((a, b) => {
+    return a.sortDate - b.sortDate;
   });
   
-  // Fill in actual data for period 2
-  filteredByDateData2.forEach(d => {
-    if (map[d.date]) {
-      map[d.date][label2] = d.volume || 0;
-    }
-  });
-  
-  // Sort by original date for accurate chronological order
-  return Object.values(map).sort((a, b) => {
-    return new Date(a.fullDate) - new Date(b.fullDate);
-  });
+  return result;
 }
 
 export default function VolumeComparisonChart({ data, periods }) {
@@ -107,16 +98,9 @@ export default function VolumeComparisonChart({ data, periods }) {
   const tealColor = "#20B2AA";
   const blackColor = "#000000";
   
-  // Format date for display
-  const formatDateRange = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  };
-  
-  // Create labels with date ranges
-  const label1 = `${periods.period1.label} (${formatDateRange(periods.period1.start, periods.period1.end)})`;
-  const label2 = `${periods.period2.label} (${formatDateRange(periods.period2.start, periods.period2.end)})`;
+  // Create simple period labels matching SummaryStats
+  const label1 = `${periods.period1.label}`;
+  const label2 = `${periods.period2.label}`;
   
   // Prepare data for chart with date range filtering
   const chartData = prepareYoYData(
@@ -134,22 +118,31 @@ export default function VolumeComparisonChart({ data, periods }) {
         Volume Comparison
       </h2>
       <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={chartData}>
+        <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 20 }}>
           <XAxis 
             dataKey="x" 
-            interval={Math.ceil(chartData.length / 12)} // Show only ~12 ticks to avoid crowding
+            interval={Math.ceil(chartData.length / 10)} // Show only ~10 ticks to avoid crowding
             angle={-45} // Angle the labels to prevent overlap
             textAnchor="end" // Align the rotated text
             height={60} // Increase height to accommodate angled labels
             tick={{ fontSize: 11 }} // Smaller font size
             tickMargin={10} // Add margin to prevent overlap
           />
-          <YAxis tickFormatter={value => value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value.toLocaleString()} />
+          <YAxis 
+            tickFormatter={value => value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : value.toLocaleString()} 
+            width={70} // Increase width to prevent label cutoff
+            tick={{ fontSize: 11 }} // Smaller font size
+            padding={{ top: 10 }} // Add padding to prevent cutoff
+          />
           <Tooltip 
             formatter={value => [value.toLocaleString(), "Volume"]} 
             labelFormatter={label => `Date: ${label}`}
           />
-          <Legend />
+          <Legend 
+            verticalAlign="top"
+            height={36}
+            wrapperStyle={{ paddingTop: '10px' }}
+          />
           <Line 
             name={label1} 
             type="monotone" 

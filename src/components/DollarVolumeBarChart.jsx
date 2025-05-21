@@ -34,16 +34,9 @@ function groupByMonth(data) {
 }
 
 export default function DollarVolumeBarChart({ data, periods }) {
-  // Format date for display
-  const formatDateRange = (start, end) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-  };
-  
-  // Create labels with date ranges
-  const period1Label = `${periods.period1.label} (${formatDateRange(periods.period1.start, periods.period1.end)})`;
-  const period2Label = `${periods.period2.label} (${formatDateRange(periods.period2.start, periods.period2.end)})`;
+  // Use simple period labels matching SummaryStats
+  const period1Label = periods.period1.label;
+  const period2Label = periods.period2.label;
   
   // Filter data by date range
   const filteredData1 = data.period1 ? data.period1.filter(d => {
